@@ -1,30 +1,40 @@
-import { Link } from "react-router-dom"
-import PropTypes from 'prop-types';
-import { useState } from "react";
+import { ElementType, useState } from "react";
 import Navbar from "./Navbar";
 import Header from "./Header";
-import Meta from "./Meta";
-import Footer from "./Footer";
+import ChatBox from "./ChatBox";
+import ListFriend from "./ListFriend";
+import { Friend } from "../types/Friend";
 
-function MainLayout({ Element }) {
+function MainLayout({ Element } : { Element: ElementType }) {
+    const [showChat, setShowChat] = useState(false); // giữ nguyên qua các route
+    const [activeChatUser, setActiveChatUser] = useState<Friend>();
+    const handleToggleChat = (friend: Friend) => {
+        setActiveChatUser(friend);
+        setShowChat(true); // ensure ChatBox shows when a friend is clicked
+      };
+    
+      const handleCloseChat = () => {
+        setShowChat(false);
+        setActiveChatUser(undefined);
+      };
+    
     return (
         <>
-            <Meta title={`Facebook`} />
-            <Header />
-            <div className={`relative z-10`}>
-                <Navbar />
-                <div className={`absolute w-full top-[8vh] right-0 lg:w-[75%]`}>
-                    <div className="p-6">
-                        <Element />
-                    </div>
+            <Header onToggleChat={handleToggleChat} />
+            <Navbar />
+            <div className="relative pt-[60px] bg-gray-100 lg:ml-[25%] flex">
+                <div className="lg:w-[60%] w-full px-4 md:px-8 min-h-[90vh]">
+                    <Element />
                 </div>
+                <div className="md:w-[40%] md:block hidden">
+                    <ListFriend onToggleChat={handleToggleChat} />
+                </div>
+                {showChat && activeChatUser && (
+                    <ChatBox userChat={activeChatUser} onClose={handleCloseChat} />
+                )}
             </div>
         </>
     )
 }
-
-MainLayout.propTypes = {
-    Element: PropTypes.elementType.isRequired,
-};
 
 export default MainLayout

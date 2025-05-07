@@ -1,0 +1,98 @@
+import { Ellipsis, Expand, Search, SquarePen } from "lucide-react";
+import { Friend } from "../types/Friend";
+import { useGetRecentChats } from "../hooks/useMessage";
+import Config from "../envVars";
+import { formatTime } from "../utils/timeUtils";
+import SpinnerLoading from "./SpinnerLoading";
+import useAuthStore from "../store/authStore";
+
+function DropdownChat({
+  onToggleChat,
+}: {
+  onToggleChat: (userChat: Friend) => void;
+}) {
+  const { messages, loading } = useGetRecentChats();
+    const { onlineUsers } = useAuthStore();
+  console.log(messages)
+
+  return (
+    <div className="absolute top-[110%] right-0 min-w-92 rounded-lg shadow-lg border-2 border-gray-200 bg-white p-3 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold">Chats</h1>
+        <div className="flex items-center gap-2">
+          <div className="bg-white hover:bg-gray-200 rounded-full size-8 flex items-center justify-center cursor-pointer">
+            <Ellipsis className="size-5 text-gray-500" />
+          </div>
+          <div className="bg-white hover:bg-gray-200 rounded-full size-8 flex items-center justify-center cursor-pointer">
+            <Expand className="size-5 text-gray-500" />
+          </div>
+          <div className="bg-white hover:bg-gray-200 rounded-full size-8 flex items-center justify-center cursor-pointer">
+            <SquarePen className="size-5 text-gray-500" />
+          </div>
+        </div>
+      </div>
+      {/* Search */}
+      <div className="relative w-full">
+        <Search className="absolute size-5 top-2.5 left-3 text-gray-500" />
+        <input
+          type="text"
+          placeholder="Search Messenger"
+          className="text-gray-900 w-full py-2 pl-10 bg-gray-100 rounded-full focus:outline-none text-sm"
+        />
+      </div>
+      {/* Tabs */}
+      <div className="flex items-center gap-2">
+        <h1 className="py-2 px-3 bg-blue-200 font-medium hover:bg-gray-200 cursor-pointer text-blue-500 rounded-full">
+          Inbox
+        </h1>
+        <h1 className="py-2 px-3 bg-white font-medium cursor-pointer hover:bg-gray-200 text-black rounded-full">
+          Communities
+        </h1>
+      </div>
+      {/* Chat List */}
+      <div className="space-y-2 h-[26rem] overflow-y-auto">
+        {loading ? (
+          <SpinnerLoading />
+        ) : messages.length === 0 ? (
+          <div className="text-center text-gray-500 py-2 px-4">
+            No recent chats
+          </div>
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.participant._id}
+              className="flex items-center gap-3 hover:bg-gray-100 rounded-lg px-2 py-2 cursor-pointer transition"
+              onClick={() => onToggleChat(message.participant)}
+            >
+                <div className="relative size-10 rounded-full">
+                    <img
+                        src={`${Config.BACKEND_URL}${message.participant.avatar}`}
+                        alt={`user avatar`}
+                        className="size-full rounded-full object-cover"
+                    />
+                    {onlineUsers.includes(message.participant._id) && (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                    )}
+                </div>
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold">{`${message.participant.firstName} ${message.participant.surname}`}</h2>
+                <p className="text-xs text-gray-500 truncate">
+                  {message?.lastMessage?.isSentByMe ? "You: " : ""}
+                  {message?.lastMessage?.text.length > 30
+                    ? `${message?.lastMessage?.text.slice(0, 30)}...`
+                    : message?.lastMessage?.text}
+                </p>
+              </div>
+              <span className="text-xs text-gray-400">
+                {formatTime(message.lastMessage.timestamp)}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default DropdownChat;
