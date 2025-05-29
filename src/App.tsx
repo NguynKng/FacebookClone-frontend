@@ -9,8 +9,24 @@ import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./middleware/ProtectedRoute";
 import AuthRoute from "./middleware/AuthRoute";
 import FriendPage from "./pages/FriendPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
+import { useEffect } from "react";
+import useAuthStore from "./store/authStore";
+import DetailPostPage from "./pages/DetailPostPage";
 
 function App() {
+  const { theme, loadUser } = useAuthStore();
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]); // Load user on app start or theme change
   return (
     <>
       <Routes>
@@ -24,10 +40,18 @@ function App() {
           }
         />
         <Route
+          path="/posts/:postId"
+          element={
+            <ProtectedRoute>
+              <MainLayout Element={DetailPostPage} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/profile/:UserId"
           element={
             <ProtectedRoute>
-              <ProfilePage />
+              <MainLayout Element={ProfilePage} />
             </ProtectedRoute>
           }
         />
@@ -36,7 +60,7 @@ function App() {
           path="/friends"
           element={
             <ProtectedRoute>
-              <FriendPage />
+              <MainLayout Element={FriendPage} />
             </ProtectedRoute>
           }
         />
@@ -55,6 +79,14 @@ function App() {
           element={
             <AuthRoute>
               <SignupPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <AuthRoute>
+              <VerifyEmailPage />
             </AuthRoute>
           }
         />

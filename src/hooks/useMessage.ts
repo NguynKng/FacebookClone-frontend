@@ -2,9 +2,10 @@ import { newMessagePayload } from "../types/Message";
 import { useEffect, useState } from "react";
 import { ApiResponse } from "../types/ApiResponse";
 import { getRecentChats } from "../services/messageApi"; // Giả sử bạn đã định nghĩa `getPostById` trong `postApi`
+import useChatStore from "../store/chatStore";
 
 export const useGetRecentChats = () => {
-  const [messages, setMessages] = useState<newMessagePayload[]>([]);
+  const { messages, setMessages, updateMessage } = useChatStore();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +16,8 @@ export const useGetRecentChats = () => {
 
       try {
         // Giả sử getPostById trả về ApiResponse<Post[]>
-        const response: ApiResponse<newMessagePayload[]> = await getRecentChats();
+        const response: ApiResponse<newMessagePayload[]> =
+          await getRecentChats();
 
         if (response.success) {
           setMessages(response.data || []); // Lưu trữ các bài viết vào state
@@ -30,7 +32,7 @@ export const useGetRecentChats = () => {
     };
 
     fetchMessages();
-  }, []);
+  }, [setMessages]);
 
-  return { messages, loading, error };
-}
+  return { messages, loading, error, updateMessage };
+};

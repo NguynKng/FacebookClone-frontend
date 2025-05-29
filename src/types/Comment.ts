@@ -8,6 +8,6 @@ export interface Comment {
     createdAt: Date
     updatedAt: Date
     user: Friend
-    replies?: Comment[] // Nếu có trả về trong getCommentsByPostId
+    replies: Comment[] // Nếu có trả về trong getCommentsByPostId
   }
   

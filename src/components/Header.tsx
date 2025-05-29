@@ -11,8 +11,10 @@ import debounce from "lodash.debounce"
 import { useGetUserProfileByName } from "../hooks/useProfile";
 import SpinnerLoading from "./SpinnerLoading";
 import { Friend } from "../types/Friend";
+import { useGetNotifications } from "../hooks/useNotification";
 
 function Header({ onToggleChat }: { onToggleChat: (friend: Friend) => void }) {
+    const { unreadCount } = useGetNotifications();
     const [searchName, setSearchName] = useState("");
     const isSearchingName = searchName.length > 0;
     const { listUser, loading } = useGetUserProfileByName(searchName, { enabled: isSearchingName });
@@ -24,7 +26,7 @@ function Header({ onToggleChat }: { onToggleChat: (friend: Friend) => void }) {
         notification: false,
         menu: false
     });
-    const { user } = useAuthStore();
+    const { user, theme } = useAuthStore();
 
     const handleSearch = debounce((name: string) => {
         setSearchName(name);
@@ -58,16 +60,16 @@ function Header({ onToggleChat }: { onToggleChat: (friend: Friend) => void }) {
     };
 
     return (
-        <header className="fixed top-0 left-0 h-[60px] w-full z-50 bg-white border-b border-gray-200 shadow-md">
+        <header className="fixed top-0 left-0 h-[60px] w-full z-50 bg-white shadow-md dark:bg-[rgb(35,35,35)]">
             <div className="w-full h-full flex justify-between items-center px-4 gap-2">
                 {/* Logo + Search */}
                 <div className="flex items-center gap-2">
                     <Link to="/" className="min-w-[40px] h-[40px]">
                         <img src="/facebook-logo.webp" alt="facebook-logo" className="w-full h-full object-cover"/>
                     </Link>
-                    <div className="relative max-w-[16rem] ">
-                        <Search className="absolute size-5 top-2.5 left-3 text-gray-500" />
-                        <input type="text" placeholder="Search Facebook" className="text-gray-900 w-full py-2 pl-10 bg-gray-100 rounded-full focus:outline-none"
+                    <div className="relative max-w-[16rem]">
+                        <Search className="absolute size-5 top-2.5 left-3 text-gray-500 dark:text-gray-300" />
+                        <input type="text" placeholder="Search Facebook" className="dark:text-white text-gray-900 w-full py-2 pl-10 bg-gray-100 dark:bg-[rgb(52,52,53)] rounded-full focus:outline-none dark:placeholder:text-gray-300"
                             onChange={(e) => handleSearch(e.target.value)}
                         />
                         {searchName.length > 0 && (
@@ -106,8 +108,8 @@ function Header({ onToggleChat }: { onToggleChat: (friend: Friend) => void }) {
                 <div className="hidden md:flex items-center justify-center flex-1 gap-1">
                     {tabs.map((tab) => (
                         <Link to={tab.link} key={tab.id}
-                            className={`relative py-4 lg:px-10 md:px-6 cursor-pointer border-b-4 transition 
-                                ${activeTab === tab.id ? "border-blue-500 text-blue-500 bg-transparent" : "border-transparent text-gray-500 hover:bg-gray-200 rounded-md"}`}
+                            className={`relative py-4 lg:px-10 md:px-6 cursor-pointer transition 
+                                ${activeTab === tab.id ? "border-b-4 border-blue-500 text-blue-500 bg-transparent" : "text-gray-500 dark:text-white dark:hover:bg-[rgb(56,56,56)] hover:bg-gray-200 rounded-md"}`}
                             onMouseEnter={() => setHoveredTab(tab.id)}
                             onMouseLeave={() => setHoveredTab("")}
                         >
@@ -125,23 +127,29 @@ function Header({ onToggleChat }: { onToggleChat: (friend: Friend) => void }) {
 
                 {/* Right icons */}
                 <div className="flex items-center gap-2">
-                    <div className="relative bg-gray-200 hover:bg-gray-300 rounded-full size-10 p-2.5 flex items-center justify-center cursor-pointer group" onClick={() => toggleDropdown("menu")}>
-                        <Grip />
+                    <div className="relative dark:bg-[rgb(70,70,71)] dark:hover:bg-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full size-10 p-2.5 flex items-center justify-center cursor-pointer group" onClick={() => toggleDropdown("menu")}>
+                        <Grip className="text-black dark:text-white" />
                         <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white text-xs px-3 py-2 rounded-xl shadow-lg whitespace-nowrap group-hover:block hidden transition-opacity duration-500 delay-300 z-50">
                             Menu
                         </div>
                     </div>
-                    <div className="relative bg-gray-200 hover:bg-gray-300 rounded-full size-10 p-2.5 cursor-pointer group" onClick={() => toggleDropdown("chat")}>
-                        <img src="/messenger-icon.png" className="size-full object-cover" />
+                    <div className="relative dark:bg-[rgb(70,70,71)] bg-gray-200 dark:hover:bg-gray-600 hover:bg-gray-300 rounded-full size-10 p-2.5 flex items-center justify-center cursor-pointer group" onClick={() => toggleDropdown("chat")}>
+                        <img src={theme === "light" ? "/messenger-icon.png" : "/messenger-icon-white.png"} className="size-full object-cover" />
                         <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white text-xs px-3 py-2 rounded-xl shadow-lg whitespace-nowrap group-hover:block hidden transition-opacity duration-500 delay-300 z-50">
                             Messenger
                         </div>
                     </div>
-                    <div className="relative bg-gray-200 hover:bg-gray-300 rounded-full size-10 p-2.5 flex items-center justify-center cursor-pointer group" onClick={() => toggleDropdown("notification")}>
-                        <Bell className="fill-black" />
+                    <div className="relative dark:bg-[rgb(70,70,71)] bg-gray-200 dark:hover:bg-gray-600 hover:bg-gray-300 rounded-full size-10 p-2.5 flex items-center justify-center cursor-pointer group" onClick={() => toggleDropdown("notification")}>
+                        <Bell className="fill-black dark:fill-white" />
                         <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white text-xs px-3 py-2 rounded-xl shadow-lg whitespace-nowrap group-hover:block hidden transition-opacity duration-500 delay-300 z-50">
                             Notifications
                         </div>
+                        {/* Unread Count */}
+                        {unreadCount > 0 && (
+                            <div className="absolute -top-1.5 -right-0.5 bg-red-500 size-5 flex items-center justify-center rounded-full">
+                                <span className="text-white text-xs font-semibold">{unreadCount}</span>
+                            </div>
+                        )}
                     </div>
                     <div className="relative">
                         {/* Avatar + Tooltip */}
@@ -150,8 +158,8 @@ function Header({ onToggleChat }: { onToggleChat: (friend: Friend) => void }) {
                             <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white text-xs px-3 py-2 rounded-xl shadow-lg whitespace-nowrap hidden group-hover:block transition-opacity duration-300 z-50">
                                 Account
                             </div>
-                            <div className="absolute rounded-full bottom-0 -right-0.5 bg-gray-100 size-4 flex items-center justify-center">
-                                <ChevronDown className="size-3.5 text-black" />
+                            <div className="absolute rounded-full bottom-0 -right-0.5 bg-gray-100 size-4 flex items-center justify-center dark:bg-[rgb(70,70,71)]">
+                                <ChevronDown className="size-3.5 text-black dark:text-white" />
                             </div>
                         </div>
                         {/* Dropdown User */}

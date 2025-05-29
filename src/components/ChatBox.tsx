@@ -7,6 +7,7 @@ import useAuthStore from "../store/authStore";
 import { Message } from "../types/Message";
 import { formatTimeToHourMinute } from "../utils/timeUtils";
 import { newMessagePayload } from "../types/Message";
+import { useGetRecentChats } from "../hooks/useMessage";
 
 function ChatBox({
   onClose,
@@ -21,6 +22,7 @@ function ChatBox({
   const { user: currentUser, socket, onlineUsers } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isOnline, setIsOnline] = useState(false);
+  const {updateMessage} = useGetRecentChats();
 
   useEffect(() => {
     if (!socket || !currentUser || !userChat) return;
@@ -61,6 +63,7 @@ function ChatBox({
     ) => {
         // ChatBox hiện tại thì chưa cần xử lý gì, có thể để console log cho dễ debug
         console.log('[NEW MESSAGE NOTIFY]', newMessage);
+        updateMessage(newMessage, newMessage.senderId == currentUser._id ); // Cập nhật lại danh sách tin nhắn
     };
 
     socket.on("loadChatHistory", handleLoadHistory);
@@ -72,7 +75,7 @@ function ChatBox({
       socket.off("receiveMessage", handleReceiveMessage);
         socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, currentUser, userChat, onlineUsers]);
+  }, [socket, currentUser, userChat, onlineUsers, updateMessage]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
@@ -98,7 +101,7 @@ function ChatBox({
   };
   return (
     <div className="fixed right-10 bottom-0 w-88 z-50">
-      <div className="rounded-t-xl shadow-xl overflow-hidden bg-white border border-gray-200">
+      <div className="rounded-t-xl shadow-xl overflow-hidden bg-white border-transparent">
         <div className="px-4 py-2 font-semibold flex justify-between items-center bg-gradient-to-r from-blue-500 to-purple-500 text-white">
           <div className="flex items-center gap-2">
             <Link to={`/profile/${userChat._id}`} className="relative rounded-full size-10">
@@ -136,7 +139,7 @@ function ChatBox({
         </div>
 
         <div
-          className={`transition-all duration-300 ${
+          className={`transition-all duration-300 dark:bg-[rgb(36,36,36)] ${
             isMinimized ? "max-h-0" : "max-h-[28rem]"
           }`}
         >
@@ -146,7 +149,7 @@ function ChatBox({
                 return (
                 <div key={msg._id} className={`flex gap-2 max-w-[75%] ${isMyMessage ? "self-end flex-row-reverse" : "self-start"}`}>
                     {!isMyMessage && (
-                        <img src={`${Config.BACKEND_URL}${userChat.avatar}`} 
+                        <img src={userChat.avatar ? `${Config.BACKEND_URL}${userChat.avatar}` : "/user.png"} 
                         alt={`${userChat.firstName} ${userChat.surname}`}
                         className="w-8 h-8 rounded-full object-cover self-end"
                     />
@@ -155,7 +158,7 @@ function ChatBox({
                         <span className={`text-gray-500 text-xs ${isMyMessage ? "self-end" : "self-start"}`}>
                             {formatTimeToHourMinute(msg.timestamp)}
                         </span>
-                        <p className={`p-2 rounded-lg text-sm ${isMyMessage ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
+                        <p className={`p-2 rounded-lg text-sm ${isMyMessage ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-[rgb(52,52,52)] dark:text-white"}`}>
                             {msg.text}
                         </p>
                     </div>
@@ -175,7 +178,7 @@ function ChatBox({
             <input
               type="text"
               placeholder="Enter message..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-full text-sm outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-full text-sm outline-none focus:ring-2 focus:ring-blue-300 dark:placeholder:text-white dark:text-white"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />

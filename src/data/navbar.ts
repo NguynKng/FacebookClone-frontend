@@ -1,6 +1,6 @@
 export const socialNavbar = [
     { src: "/star.png", text: "Events", description: "Organise or find events and other things to do online and nearby.", link: "#" },
-    { src: "/two-people.png", text: "Friends", description: "Search for friends or people you may know.", link: "#" },
+    { src: "/two-people.png", text: "Friends", description: "Search for friends or people you may know.", link: "/friends" },
     { src: "/group.png", text: "Groups", description: "Connect with people who share your interests.", link: "#" },
     { src: "/feed.png", text: "News Feed", description: "See relevant posts from people and Pages that you follow.", link: "#" },
     { src: "/feed.png", text: "Feeds", description: "See the most recent posts from your friends, groups, Pages and more.", link: "#" },

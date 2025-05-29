@@ -39,11 +39,11 @@ function CommentItem({ userId, comment, onReply }: CommentItemProps) {
       </Link>
 
       <div className="flex flex-col gap-1 w-full">
-        <div className="py-2 px-4 rounded-3xl bg-gray-200 w-fit max-w-full">
+        <div className="py-2 px-4 rounded-3xl bg-gray-200 dark:bg-[rgb(52,52,53)] w-fit max-w-full">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to={`/profile/${comment.user._id}`}
-              className="text-[16px] font-semibold hover:text-blue-600"
+              className="text-[16px] font-medium hover:text-blue-600 dark:text-white"
             >
               {`${comment.user.firstName} ${comment.user.surname} `}
             </Link>
@@ -51,14 +51,14 @@ function CommentItem({ userId, comment, onReply }: CommentItemProps) {
               <span className="text-sm text-gray-500">Tác giả</span>
             )}
           </div>
-          <p className="text-base break-words">{comment.content}</p>
+          <p className="text-base break-words dark:text-white">{comment.content}</p>
         </div>
 
         <div className="flex items-center gap-2 px-3 text-sm flex-wrap">
-          <span className="text-gray-500">{formatTime(comment.createdAt)}</span>
+          <span className="text-gray-500 dark:text-gray-400">{formatTime(comment.createdAt)}</span>
           <button
             onClick={() => setReplyingTo(comment._id)}
-            className="text-gray-500 hover:underline cursor-pointer"
+            className="text-gray-500 dark:text-gray-400 hover:underline cursor-pointer"
           >
             Trả lời
           </button>

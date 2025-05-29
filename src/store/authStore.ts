@@ -2,11 +2,17 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import toast from "react-hot-toast";
 import { User, RegisterData } from "../types/User";
-import { registerUser, loginUser, loadUserProfile } from "../services/authApi";
+import {
+  registerUser,
+  loginUser,
+  loadUserProfile,
+  verifyUserEmail,
+} from "../services/authApi";
 import { uploadAvatar, uploadCoverPhoto } from "../services/userApi";
 import { createPost as createPostApi } from "../services/postApi";
 import { Socket, io } from "socket.io-client";
 import Config from "../envVars";
+import { Post } from "../types/Post";
 
 const createSocketConnection = () => {
   return io(Config.BACKEND_URL as string, {
@@ -23,8 +29,12 @@ interface AuthState {
   error: string | null;
   socket: Socket | null;
   onlineUsers: string[];
+  theme: string;
+  sse: EventSource | null;
+  connectSSE: () => void;
+  disconnectSSE: () => void;
 
-  register: (userData: RegisterData) => Promise<void>;
+  register: (userData: RegisterData) => Promise<boolean>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loadUser: () => Promise<void>;
@@ -36,11 +46,13 @@ interface AuthState {
 
   setAvatar: (file: File) => Promise<string | null>;
   setCoverPhoto: (file: File) => Promise<string | null>;
-  createPost: (content: string, images?: File[]) => Promise<void>;
+  createPost: (content: string, images?: File[]) => Promise<Post>;
 
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+  toggleTheme: () => void;
+  verifyEmail: (email: string, code: string) => Promise<void>;
 }
 
 const useAuthStore = create<AuthState>()(
@@ -53,6 +65,40 @@ const useAuthStore = create<AuthState>()(
       error: null,
       socket: null,
       onlineUsers: [],
+      theme: "light",
+      sse: null,
+      connectSSE: () => {
+        const userId = get().user?._id;
+        if (!userId) return;
+        const sse = new EventSource(`${Config.BACKEND_URL}/events/${userId}`, {
+          withCredentials: true,
+        });
+
+        sse.onopen = () => {
+          console.log(`[SSE OPENED for ${userId}]`);
+        };
+
+        sse.onerror = (err) => {
+          console.error("[SSE ERROR]", err);
+          sse.close(); // auto-reconnect logic có thể thêm sau
+        };
+
+        set({ sse });
+      },
+      disconnectSSE: () => {
+        const sse = get().sse;
+        if (sse) {
+          sse.close();
+          set({ sse: null });
+          console.log("[SSE DISCONNECTED]");
+        }
+      },
+      toggleTheme: () => {
+        const currentTheme = get().theme;
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        set({ theme: newTheme });
+        document.documentElement.classList.toggle("dark", newTheme === "dark");
+      },
 
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => {
@@ -83,23 +129,57 @@ const useAuthStore = create<AuthState>()(
           set({ socket: null });
         }
       },
+      verifyEmail: async (email, code) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await verifyUserEmail(email, code);
+          if (response.data.success) {
+            const { token, user } = response.data;
 
+            set({
+              token,
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+
+            get().connectSocket();
+            get().connectSSE();
+            toast.success(
+              `Email verified successfully! Welcome aboard, ${user.firstName} ${user.surname}!`
+            );
+          } else {
+            const message = response.data.message;
+            set({ isLoading: false, error: message });
+            toast.error(message);
+          }
+        } catch (err: any) {
+          const errorMessage =
+            err.response?.data?.message || "Email verification failed";
+          set({
+            isLoading: false,
+            error: errorMessage,
+            isAuthenticated: false,
+            token: null,
+            user: null,
+          });
+          toast.error(errorMessage);
+        }
+      },
       register: async (userData) => {
         try {
           set({ isLoading: true, error: null });
           const response = await registerUser(userData);
-          const { token, user } = response.data;
-
-          set({
-            token,
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-
-          get().connectSocket(); // Gửi token + userId
-          toast.success(`Welcome, ${user.firstName} ${user.surname}!`);
+          if (response.data.success) {
+            set({ isLoading: false }); // <-- Dừng loading sau khi thành công
+            return true;
+          } else {
+            const message = response.data.message;
+            set({ isLoading: false, error: message });
+            toast.error(message);
+            return false;
+          }
         } catch (err: any) {
           const errorMessage =
             err.response?.data?.message || "Registration failed";
@@ -111,6 +191,7 @@ const useAuthStore = create<AuthState>()(
             user: null,
           });
           toast.error(errorMessage);
+          return false;
         }
       },
 
@@ -129,8 +210,10 @@ const useAuthStore = create<AuthState>()(
           });
 
           get().connectSocket();
+          get().connectSSE();
           toast.success(`Welcome back, ${user.firstName} ${user.surname}!`);
         } catch (err: any) {
+          console.log(err);
           const errorMessage = err.response?.data?.message || "Login failed";
           set({
             isLoading: false,
@@ -158,10 +241,11 @@ const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-
-          // Nếu F5 mất socket thì connect lại
           if (!get().socket) {
             get().connectSocket();
+          }
+          if (!get().sse) {
+            get().connectSSE();
           }
         } catch (err) {
           const errorMessage = "Session expired. Please login again.";
@@ -178,6 +262,7 @@ const useAuthStore = create<AuthState>()(
 
       logout: () => {
         get().disconnectSocket();
+        get().disconnectSSE();
 
         set({
           token: null,
@@ -298,14 +383,17 @@ const useAuthStore = create<AuthState>()(
 
           if (response.data.success) {
             toast.success(response.data.message);
+            return response.data.data;
           } else {
             toast.error(response.data.message);
+            return null;
           }
         } catch (err: any) {
           const errorMessage =
             err.response?.data?.message || "Failed to create post";
           set({ error: errorMessage });
           toast.error(errorMessage);
+          return null;
         }
       },
     }),
@@ -315,6 +403,7 @@ const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
         user: state.user,
+        theme: state.theme,
       }),
     }
   )

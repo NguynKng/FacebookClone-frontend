@@ -1,4 +1,4 @@
-import { MessageCircle, ThumbsUp } from "lucide-react";
+import { ThumbsUp, Ellipsis, Trash2 } from "lucide-react";
 import { Post } from "../types/Post";
 import Config from "../envVars";
 import { formatTime } from "../utils/timeUtils";
@@ -13,28 +13,30 @@ import {
 } from "../services/commentApi";
 import { Comment } from "../types/Comment";
 import SpinnerLoading from "./SpinnerLoading";
-import { reactToPost } from "../services/postApi";
+import { reactToPost, deletePost } from "../services/postApi";
 import useAuthStore from "../store/authStore";
 import { Reaction } from "../types/Reaction";
 import emotions from "../data/emotion";
+import toast from "react-hot-toast";
 
-function PostCard({ post }: { post: Post }) {
-  const [openComment, setOpenComment] = useState(false);
+function PostCard({ post, onDeletePost, showComment }: { post: Post, onDeletePost?: (postId: string) => void, showComment?: boolean }) {
+  const [openComment, setOpenComment] = useState(showComment);
   const [comments, setComments] = useState<Comment[]>([]);
   const { author, createdAt, content, images } = post;
   const [hoveredEmotion, setHoveredEmotion] = useState<string | null>(null);
   const [hoveredEmotionUser, setHoveredEmotionUser] = useState<string | null>(
     null
   );
+  const [isOpenPostDropdown, setIsOpenPostDropdown] = useState(false);
   const [loadingComment, setLoadingComment] = useState(false);
-  const { user } = useAuthStore();
+  const { user, theme } = useAuthStore();
   const [reactions, setReactions] = useState<Reaction[]>(post.reactions);
   const filteredReactions = hoveredEmotionUser
     ? reactions.filter((r) => r.type === hoveredEmotionUser)
     : [];
   const myReaction = useMemo(
-    () => reactions.find((reaction) => reaction?.user?._id === user?._id),
-    [reactions, user]
+    () => reactions.find((reaction) => reaction.user?._id === user?._id),
+    [reactions, user?._id]
   );
 
   const isReacted = useMemo(() => !!myReaction, [myReaction]);
@@ -55,9 +57,7 @@ function PostCard({ post }: { post: Post }) {
   }, [openComment, post, user]);
 
   const handleReactPost = useCallback(
-    async (
-      type: "Like" | "Love" | "Haha" | "Care" | "Wow" | "Sad" | "Angry"
-    ) => {
+    async (type: Reaction["type"]) => {
       if (!user) return;
 
       const prevReactions = [...reactions];
@@ -68,7 +68,7 @@ function PostCard({ post }: { post: Post }) {
 
         const serverReaction = response.data;
 
-        if (myReaction?.type === type) {
+        if (myReaction && myReaction.type === type) {
           // Nếu cùng loại → xóa
           const updated = reactions.filter((r) => r.user._id !== user._id);
           setReactions(updated);
@@ -90,6 +90,26 @@ function PostCard({ post }: { post: Post }) {
     [post._id, user, reactions, myReaction]
   );
 
+  const handleDeletePost = async () => {
+    if (!user) return;
+
+    try {
+      const response = await deletePost(post._id);
+        if (response.success) {
+            // Xử lý sau khi xóa thành công, ví dụ: thông báo cho người dùng
+            if (onDeletePost) {
+                onDeletePost(post._id);
+            }
+            toast.success("Post deleted successfully");
+        } else {
+            // Xử lý nếu có lỗi xảy ra
+            toast.error("Failed to delete post");
+        }
+    } catch (error) {
+      console.error("❌ Failed to delete post:", error);
+    }
+  };
+
   const handleCommentSubmit = async (content: string) => {
     const res = await createComment(post._id, content);
     if (res.success && res.data) {
@@ -109,39 +129,59 @@ function PostCard({ post }: { post: Post }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md space-y-2">
-      <div className="flex items-center space-x-2 pt-4 pl-4">
-        <Link
-          to={`/profile/${author._id}`}
-          className="size-10 rounded-full border-2 border-indigo-500"
-        >
-          <img
-            src={
-              author?.avatar
-                ? `${Config.BACKEND_URL}${author.avatar}`
-                : "/user.png"
-            }
-            alt="User Avatar"
-            className="size-full rounded-full object-cover"
-          />
-        </Link>
-        <div>
+    <div className="bg-white dark:bg-[rgb(35,35,35)] rounded-lg shadow-md space-y-2">
+      <div className="flex items-center justify-between px-4 pt-4">
+        <div className="flex items-center space-x-2">
           <Link
             to={`/profile/${author._id}`}
-            className="text-black font-semibold hover:underline underline-offset-2"
-          >{`${author.firstName} ${author.surname}`}</Link>
-          <div className="flex items-center gap-1 text-gray-500 text-sm">
-            <span>{formatTime(createdAt)}</span>
-            <span className="text-gray-400">•</span>
-            <img src="/globe.png" className="size-4 object-cover" />
+            className="size-10 rounded-full"
+          >
+            <img
+              src={
+                author?.avatar
+                  ? `${Config.BACKEND_URL}${author.avatar}`
+                  : "/user.png"
+              }
+              alt="User Avatar"
+              className="size-full rounded-full object-cover"
+            />
+          </Link>
+          <div>
+            <Link
+              to={`/profile/${author._id}`}
+              className="text-black font-semibold hover:underline underline-offset-2 dark:text-white"
+            >{`${author.firstName} ${author.surname}`}</Link>
+            <div className="flex items-center gap-1 text-gray-500 text-sm">
+              <span className="text-gray-500 dark:text-gray-400">{formatTime(createdAt)}</span>
+              <span className="text-gray-400">•</span>
+              <img src={theme === "ligt" ? "/globe.png" : "/globe-white.png"} className="size-4 object-cover" />
+            </div>
           </div>
         </div>
+        {author._id === user?._id && (
+          <div
+            className="relative rounded-full text-black hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer p-2"
+            onClick={() => setIsOpenPostDropdown(!isOpenPostDropdown)}
+          >
+            <Ellipsis className="size-5 dark:text-gray-500" />
+            {isOpenPostDropdown && (
+              <div className="absolute right-0 top-full w-72 bg-white dark:bg-[rgb(36,36,36)] rounded-lg shadow-xl z-50 border border-gray-200 dark:border-gray-500">
+                <ul className="p-2">
+                  <li className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer rounded-md" onClick={handleDeletePost}>
+                    <Trash2 className="dark:text-gray-400" />
+                    <span className="font-medium dark:text-gray-400">Delete post</span>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {/*Content*/}
-      <p className="text-gray-800 px-4 w-full">{content}</p>
+      <p className="text-gray-800 px-4 w-full dark:text-white">{content}</p>
       {/*Images*/}
       {images && images.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-3 border-y-[1px] border-gray-200">
+        <div className="flex flex-wrap gap-1 mt-3 border-y-[1px] border-gray-200 dark:border-gray-500">
           {images.slice(0, 4).map((img, index) => (
             <div
               key={index}
@@ -171,7 +211,7 @@ function PostCard({ post }: { post: Post }) {
       {/*Like and Shares*/}
       <div className="px-4 w-full">
         {/*Like, Share and Comment number*/}
-        <div className="flex justify-between items-center pb-2 border-b-2 border-gray-200">
+        <div className="flex justify-between items-center pb-2 border-b-2 border-gray-200 dark:border-gray-500">
           {reactions.length > 0 && (
             <div className="flex items-center">
               <div className="flex items-center relative group">
@@ -188,7 +228,7 @@ function PostCard({ post }: { post: Post }) {
                         <img
                           src={emotion.icon}
                           className={`size-6 object-cover cursor-pointer ${
-                            visibleIndex !== 0 ? "-ml-1" : ""
+                            visibleIndex !== 0 ? "-ml-2" : ""
                           } relative z-[${10 - visibleIndex}]`}
                         />
                         {hoveredEmotionUser === emotion.name && (
@@ -209,19 +249,19 @@ function PostCard({ post }: { post: Post }) {
                   return acc;
                 }, [])}
               </div>
-              <span className="text-gray-600">{reactions.length}</span>
+              <span className="text-gray-600 dark:text-gray-400">{reactions.length}</span>
             </div>
           )}
           {comments.length > 0 && (
             <div className="flex gap-3 items-center">
               <div
-                className="flex gap-1 items-center text-gray-500 cursor-pointer"
+                className="flex gap-1 items-center text-gray-500 cursor-pointer dark:text-gray-400"
                 onClick={() => setOpenComment(!openComment)}
               >
                 <span>{comments.length}</span>
                 <span>comments</span>
               </div>
-              <div className="flex gap-1 items-center text-gray-500">
+              <div className="flex gap-1 items-center text-gray-500 dark:text-gray-400">
                 <span>2</span>
                 <span>shares</span>
               </div>
@@ -233,46 +273,48 @@ function PostCard({ post }: { post: Post }) {
           <div className="relative group w-1/3">
             {!isReacted ? (
               <button
-                className="size-full py-2 px-4 flex items-center justify-center gap-1 text-gray-500 rounded-md hover:bg-gray-100 cursor-pointer"
+                className="size-full py-2 px-4 flex items-center justify-center gap-1 text-gray-500 dark:text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer"
                 onClick={() => handleReactPost("Like")}
               >
                 <ThumbsUp className={`size-5`} />
                 <span>Like</span>
               </button>
             ) : (
-              <div
-                className="size-full py-2 px-4 flex items-center justify-center gap-1 text-gray-500 rounded-md hover:bg-gray-100 cursor-pointer"
-                onClick={() => handleReactPost(myReaction?.type)}
-              >
-                <img
-                  src={
-                    emotions.find(
-                      (emotion) => emotion.name === myReaction?.type
-                    )?.icon
-                  }
-                  className="size-6 object-cover"
-                />
-                <span
-                  className={`font-medium`}
-                  style={{
-                    color: `${
-                      emotions.find(
-                        (emotion) => emotion.name === myReaction?.type
-                      )?.color
-                    }`,
-                  }}
+              myReaction && (
+                <div
+                  className="size-full py-2 px-4 flex items-center justify-center gap-1 text-gray-500 rounded-md hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer"
+                  onClick={() => handleReactPost(myReaction.type)}
                 >
-                  {
-                    emotions.find(
-                      (emotion) => emotion.name === myReaction?.type
-                    )?.name
-                  }
-                </span>
-              </div>
+                  <img
+                    src={
+                      emotions.find(
+                        (emotion) => emotion.name === myReaction.type
+                      )?.icon
+                    }
+                    className="size-6 object-cover"
+                  />
+                  <span
+                    className={`font-medium`}
+                    style={{
+                      color: `${
+                        emotions.find(
+                          (emotion) => emotion.name === myReaction.type
+                        )?.color
+                      }`,
+                    }}
+                  >
+                    {
+                      emotions.find(
+                        (emotion) => emotion.name === myReaction.type
+                      )?.name
+                    }
+                  </span>
+                </div>
+              )
             )}
 
             <div className="absolute bottom-[120%] left-0 z-50 invisible group-hover:visible transition-all delay-200">
-              <div className="flex bg-white rounded-full shadow-md border border-gray-200 relative z-50">
+              <div className="flex bg-white dark:bg-[rgb(35,35,35)] rounded-full shadow-md relative z-50">
                 {emotions.map((emotion) => (
                   <div
                     key={emotion.id}
@@ -300,14 +342,14 @@ function PostCard({ post }: { post: Post }) {
             </div>
           </div>
           <button
-            className="w-1/3 py-2 px-4 flex items-center justify-center gap-2 text-gray-500 rounded-md hover:bg-gray-100 cursor-pointer"
+            className="w-1/3 py-2 px-4 flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer"
             onClick={() => setOpenComment(!openComment)}
           >
             <img src="/speech-bubble.png" className="size-5 object-cover" />
             <span>Comment</span>
           </button>
           <button
-            className="w-1/3 py-2 px-4 flex items-center justify-center gap-2 text-gray-500 rounded-md hover:bg-gray-100 cursor-pointer"
+            className="w-1/3 py-2 px-4 flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer"
             onClick={() => setOpenComment(!openComment)}
           >
             <img src="/share.png" className="size-5 object-cover" />
@@ -315,8 +357,8 @@ function PostCard({ post }: { post: Post }) {
           </button>
         </div>
         {openComment && (
-          <div className="py-2 px-4 border-t-2 border-gray-200 space-y-4">
-            <h1 className="text-lg">Tất cả bình luận</h1>
+          <div className="py-2 px-4 border-t-2 border-gray-200 dark:border-gray-500 space-y-4">
+            <h1 className="text-lg dark:text-gray-400">Tất cả bình luận</h1>
             <CommentInput
               onSubmit={handleCommentSubmit}
               placeholder="Write a comment..."

@@ -2,17 +2,22 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import Config from "../envVars";
 import { toast } from "react-hot-toast";
 import useAuthStore from "../store/authStore.js";
+import { Post } from "../types/Post.js";
 
 interface PostModalProps {
   onClose: () => void;
+  onPostCreated?: (post: Post) => void; // <-- add this line
 }
 
-const CreatePostModal: React.FC<PostModalProps> = ({ onClose }) => {
+const CreatePostModal: React.FC<PostModalProps> = ({
+  onClose,
+  onPostCreated,
+}) => {
   const [content, setContent] = useState<string>("");
   const [images, setImages] = useState<File[]>([]);
   const [imagesPreview, setImagesPreview] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-    const { createPost, user } = useAuthStore();
+  const { createPost, user } = useAuthStore();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -26,8 +31,11 @@ const CreatePostModal: React.FC<PostModalProps> = ({ onClose }) => {
       }
 
       // Submit each image as one post with content (you can change to support multiple images per post)
-      await createPost(content, images);
-      console.log("Post created successfully");
+      const newPost = await createPost(content, images);
+      
+      if (onPostCreated) {
+        onPostCreated(newPost); // Send it back to HomePage
+      }
 
       setContent("");
       setImages([]);
@@ -58,11 +66,11 @@ const CreatePostModal: React.FC<PostModalProps> = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 min-h-screen z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-white opacity-90 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-white dark:bg-[rgb(35,35,35)] opacity-90 backdrop-blur-sm"></div>
 
       <form
         onSubmit={handleSubmit}
-        className="relative bg-white rounded-lg w-full max-w-xl p-4 shadow-xl z-10"
+        className="relative bg-white dark:bg-[rgb(52,52,53)] rounded-lg w-full max-w-xl p-4 shadow-xl z-10"
       >
         <button
           type="button"
@@ -72,8 +80,8 @@ const CreatePostModal: React.FC<PostModalProps> = ({ onClose }) => {
           ✕
         </button>
 
-        <h2 className="text-2xl font-bold text-center mb-4 pb-2 border-b-2 border-gray-200">
-          Tạo bài viết
+        <h2 className="text-2xl font-semibold text-center mb-4 pb-2 border-b-2 border-gray-200 dark:border-gray-500 dark:text-gray-400">
+          Create post
         </h2>
 
         <div className="flex gap-3 items-center mb-4">
@@ -85,18 +93,18 @@ const CreatePostModal: React.FC<PostModalProps> = ({ onClose }) => {
             alt="avatar"
           />
           <div>
-            <p className="font-medium">{`${user?.firstName} ${user?.surname}`}</p>
-            <select className="text-sm text-gray-500 bg-gray-100 rounded px-2 py-1">
-              <option>Bạn bè</option>
-              <option>Công khai</option>
-              <option>Chỉ mình tôi</option>
+            <p className="font-medium dark:text-gray-400">{`${user?.firstName} ${user?.surname}`}</p>
+            <select className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-500 rounded px-2 py-1">
+              <option>Friend</option>
+              <option>Public</option>
+              <option>Private</option>
             </select>
           </div>
         </div>
 
         <textarea
-          className="w-full h-40 resize-none p-2 border border-gray-300 rounded focus:outline-none"
-          placeholder={`${user?.firstName} ${user?.surname} ơi, bạn đang nghĩ gì thế?`}
+          className="w-full h-40 resize-none p-2 border border-gray-300 rounded focus:outline-none placeholder:text-gray-400 dark:text-white"
+          placeholder={`${user?.firstName} ${user?.surname}, what are you thinking?`}
           value={content}
           onChange={(e) => setContent(e.target.value)}
         ></textarea>
@@ -128,7 +136,7 @@ const CreatePostModal: React.FC<PostModalProps> = ({ onClose }) => {
             className="flex items-center gap-2 text-purple-600 cursor-pointer hover:text-purple-800"
           >
             <img src="/photos.png" className="w-6 h-6" alt="upload" />
-            <span>Ảnh</span>
+            <span>Image</span>
           </label>
           <input
             id="uploadImage"
@@ -145,7 +153,7 @@ const CreatePostModal: React.FC<PostModalProps> = ({ onClose }) => {
           className="w-full mt-4 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition duration-200 cursor-pointer"
           disabled={loading}
         >
-          {loading ? "Đang đăng..." : "Đăng"}
+          {loading ? "Posting..." : "Post"}
         </button>
       </form>
     </div>

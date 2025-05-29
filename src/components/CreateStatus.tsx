@@ -3,14 +3,15 @@ import CreatePostModal from "./CreatePostModal";
 import useAuthStore from "../store/authStore";
 import Config from "../envVars";
 import { Link } from "react-router-dom";
+import { Post } from "../types/Post";
 
-function CreateStatus() {
+function CreateStatus({ onPostCreated }: { onPostCreated: (post: Post) => void }) {
   const { user } = useAuthStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   return (
     <>
-      <div className="px-4 bg-white rounded-lg">
-        <div className="flex items-center gap-2 py-4 border-b-2 border-gray-200">
+      <div className="px-4 bg-white dark:bg-[rgb(35,35,35)] rounded-lg">
+        <div className="flex items-center gap-2 py-4 border-b-[1px] border-gray-200 dark:border-gray-500">
           <Link to={`/profile/${user?._id}`} className="rounded-full size-10">
             <img
               src={
@@ -23,15 +24,15 @@ function CreateStatus() {
             />
           </Link>
           <div
-            className="py-2 px-4 rounded-full bg-gray-100 w-full hover:bg-gray-200 cursor-pointer"
+            className="py-2 px-4 rounded-full bg-gray-100 dark:bg-[rgb(52,52,53)] w-full dark:hover:bg-[rgb(56,56,56)] hover:bg-gray-200 cursor-pointer"
             onClick={() => setIsModalOpen(true)}
           >
-            <span className="text-gray-500 text-[1.1rem]">{`What's on your mind, ${user?.firstName} ${user?.surname}`}</span>
+            <span className="text-gray-500 dark:text-gray-400">{`What's on your mind, ${user?.firstName}?`}</span>
           </div>
         </div>
         <div className="flex items-center py-2">
           <div
-            className="flex flex-wrap items-center justify-center w-1/3 gap-2 hover:bg-gray-100 cursor-pointer rounded-md py-2 px-4"
+            className="flex flex-wrap items-center justify-center w-1/3 gap-2 hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer rounded-md py-2 px-4"
             onClick={() => setIsModalOpen(true)}
           >
             <img
@@ -39,10 +40,10 @@ function CreateStatus() {
               className="object-cover size-6"
               alt="video-player"
             />
-            <span className="text-gray-600 text-center">Live video</span>
+            <span className="text-gray-600 text-center dark:text-gray-400">Live video</span>
           </div>
           <div
-            className="flex flex-wrap items-center justify-center w-1/3 gap-2 hover:bg-gray-100 cursor-pointer rounded-md py-2 px-4"
+            className="flex flex-wrap items-center justify-center w-1/3 gap-2 hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer rounded-md py-2 px-4"
             onClick={() => setIsModalOpen(true)}
           >
             <img
@@ -50,10 +51,10 @@ function CreateStatus() {
               className="object-cover size-6"
               alt="video-player"
             />
-            <span className="text-gray-600 text-center">Photo / video</span>
+            <span className="text-gray-600 text-center dark:text-gray-400">Photo / video</span>
           </div>
           <div
-            className="flex flex-wrap items-center justify-center w-1/3 gap-2 hover:bg-gray-100 cursor-pointer rounded-md py-2 px-4"
+            className="flex flex-wrap items-center justify-center w-1/3 gap-2 hover:bg-gray-100 dark:hover:bg-[rgb(56,56,56)] cursor-pointer rounded-md py-2 px-4"
             onClick={() => setIsModalOpen(true)}
           >
             <img
@@ -61,12 +62,19 @@ function CreateStatus() {
               className="object-cover size-6"
               alt="video-player"
             />
-            <span className="text-gray-600 text-center">Feeling / activity</span>
+            <span className="text-gray-600 text-center dark:text-gray-400">
+              Feeling / activity
+            </span>
           </div>
         </div>
       </div>
       {/* Modal tạo bài viết */}
-      {isModalOpen && <CreatePostModal onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && (
+        <CreatePostModal
+          onClose={() => setIsModalOpen(false)}
+          onPostCreated={onPostCreated}
+        />
+      )}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, ChangeEvent, FormEvent, FocusEvent, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Meta from "../components/Meta";
 import useAuthStore from "../store/authStore";
 import { RegisterData } from "../types/User";
@@ -11,6 +11,7 @@ type TouchedFields = {
 };
 
 function SignupPage() {
+    const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     surname: "",
@@ -58,13 +59,13 @@ function SignupPage() {
     setTouched(allTouched);
 
     // Check if any field is empty
-    const hasError = Object.entries(formData).some(([key, value]) =>
+    const hasError = Object.entries(formData).some(([value]) =>
       isEmpty(value)
     );
 
     if (!hasError) {
       // Submit registration request
-      await register({
+      const success = await register({
         ...formData,
         // Making sure we use the correct field names expected by the API
         firstName: formData.firstName,
@@ -76,6 +77,9 @@ function SignupPage() {
         birthYear: formData.birthYear,
         gender: formData.gender,
       });
+      if (success) {
+        navigate("/verify-email?email=" + formData.email);
+      }
     }
   };
 
@@ -83,9 +87,9 @@ function SignupPage() {
     <>
       <Meta title="Sign up for Facebook" />
       <div className="flex items-center justify-center bg-gray-200 min-h-screen">
-        <div className="flex flex-col items-center justify-center gap-4">
+        <div className="flex flex-col items-center justify-center gap-4 px-2">
           <h1 className="text-blue-500 font-bold text-6xl">facebook</h1>
-          <div className="bg-white rounded-md w-[28rem] shadow-lg">
+          <div className="bg-white rounded-md max-w-[28rem] shadow-lg">
             <div className="p-4 border-b-2 border-gray-200">
               <h1 className="text-[28px] font-medium text-center">
                 Create a new account

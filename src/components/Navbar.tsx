@@ -7,8 +7,13 @@ import Config from "../envVars";
 function Navbar() {
   const [showAll, setShowAll] = useState(false);
   const { user } = useAuthStore();
-  const avatarUrl = user?.avatar ? `${Config.BACKEND_URL}${user.avatar}` : "/user.png";
-  const fullName = user?.surname && user?.firstName ? `${user.firstName} ${user.surname}` : "User";
+  const avatarUrl = user?.avatar
+    ? `${Config.BACKEND_URL}${user.avatar}`
+    : "/user.png";
+  const fullName =
+    user?.surname && user?.firstName
+      ? `${user.firstName} ${user.surname}`
+      : "User";
 
   const navbarData = [
     { src: avatarUrl, text: fullName, link: `/profile/${user?._id}` },
@@ -36,26 +41,43 @@ function Navbar() {
 
   const displayData = showAll
     ? navbarData
-    : navbarData.slice(0, navbarData.findIndex((item) => item.text === "Feeds") + 1);
+    : navbarData.slice(
+        0,
+        navbarData.findIndex((item) => item.text === "Feeds") + 1
+      );
 
   return (
-    <nav className="fixed top-[60px] left-0 h-[92vh] w-[25%] pl-4 py-4 overflow-y-auto z-40 hidden lg:block custom-scroll bg-gray-100">
+    <nav className="fixed top-[60px] left-0 h-[92vh] w-[25%] pl-4 py-4 overflow-y-auto z-40 hidden lg:block custom-scroll bg-gray-100 dark:bg-[rgb(16,16,16)]">
       <div className="space-y-2">
         {displayData.map((item, index) => (
-          <Link key={index} to={item.link}
-            className="flex gap-4 items-center hover:bg-gray-200 p-2 rounded-md cursor-pointer">
-            <img src={item.src} className={`size-8 object-cover ${index == 0 && 'rounded-full'}`} />
-            <span className="font-medium text-[15px]">{item.text}</span>
+          <Link
+            key={index}
+            to={item.link}
+            className="flex gap-4 items-center hover:bg-gray-200 dark:hover:bg-[rgb(56,56,56)] p-2 rounded-md cursor-pointer"
+          >
+            <img
+              src={item.src}
+              className={`size-8 object-cover ${index == 0 && "rounded-full"}`}
+            />
+            <span className="font-semibold text-[15px] dark:text-white">
+              {item.text}
+            </span>
           </Link>
         ))}
 
         {/* Toggle Button */}
-        <button className="flex gap-4 items-center hover:bg-gray-200 p-2 rounded-md cursor-pointer w-full"
-          onClick={() => setShowAll((prev) => !prev)}>
-            <div className="flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full">
-                {showAll ? <ChevronUp /> : <ChevronDown className="size-6" />}
-            </div>
-          <span className="font-medium text-[15px]">
+        <button
+          className="flex gap-4 items-center hover:bg-gray-200 hover:dark:hover:bg-[rgb(56,56,56)] p-2 rounded-md cursor-pointer w-full"
+          onClick={() => setShowAll((prev) => !prev)}
+        >
+          <div className="flex items-center justify-center w-8 h-8 bg-gray-200 dark:bg-[rgb(30,30,30)] rounded-full">
+            {showAll ? (
+              <ChevronUp className="size-6 dark:text-white" />
+            ) : (
+              <ChevronDown className="size-6 dark:text-white" />
+            )}
+          </div>
+          <span className="font-semibold text-[15px] dark:text-white">
             {showAll ? "See less" : "See more"}
           </span>
         </button>

@@ -34,7 +34,7 @@ export const useGetUserPosts = (UserId: string) => {
     fetchPosts();
   }, [UserId]);
 
-  return { posts, loading, error };
+  return { posts, setPosts, loading, error };
 };
 
 export const useGetAllPost = () => {
@@ -66,5 +66,5 @@ export const useGetAllPost = () => {
       fetchPosts();
     }, []);
   
-    return { posts, loading, error };
+    return { posts, setPosts, loading, error };
   };

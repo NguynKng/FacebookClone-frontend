@@ -8,6 +8,30 @@ export const createPost = (formData: FormData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
+
+export const getPostById = async (
+  PostId: string
+): Promise<ApiResponse<Post>> => {
+  try {
+    const response = await api.get(`/posts/${PostId}`);
+
+    // Giả sử response.data.posts chứa mảng bài viết
+    return {
+      success: true,
+      message: response.data.message, // Thông điệp có thể tuỳ chỉnh
+      data: response.data.data || {}, // Dữ liệu bài viết
+    };
+  } catch (error: any) {
+    // Trong trường hợp có lỗi, bạn trả về thông báo lỗi
+    return {
+      success: false,
+      message: error.message || "Failed to fetch posts",
+      data: {} as Post, // Mảng trống nếu có lỗi
+    };
+  }
+};
+
+
 export const getPostByUserId = async (
   UserId: string
 ): Promise<ApiResponse<Post[]>> => {
@@ -67,6 +91,26 @@ export const reactToPost = async (
       success: false,
       message: "Đã có lỗi xảy ra khi thả cảm xúc",
       data: {} as Reaction,
+    };
+  }
+};
+
+export const deletePost = async (
+  postId: string
+): Promise<ApiResponse<Post>> => {
+  try {
+    const response = await api.delete(`/posts/${postId}`);
+    return {
+      success: true,
+      message: response.data.message,
+      data: response.data.data || {}, // Dữ liệu bài viết đã xóa
+    };
+  } catch (error: any) {
+    console.log(error);
+    return {
+      success: false,
+      message: "Đã có lỗi xảy ra khi xóa bài viết",
+      data: {} as Post,
     };
   }
 };

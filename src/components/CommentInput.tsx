@@ -47,7 +47,7 @@ function CommentInput({ placeholder = "Write a comment...", onSubmit }: CommentI
       <input
         type="text"
         placeholder={placeholder}
-        className="flex-1 min-w-0 py-2 px-4 rounded-full bg-gray-100 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ease-in-out hover:bg-gray-200 w-full sm:w-auto"
+        className="flex-1 min-w-0 py-2 px-4 rounded-full bg-gray-100 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ease-in-out hover:bg-gray-200 w-full sm:w-auto dark:bg-[rgb(52,52,53)] dark:hover:bg-[rgb(56,56,56)] dark:text-white"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         disabled={loading}
@@ -55,7 +55,7 @@ function CommentInput({ placeholder = "Write a comment...", onSubmit }: CommentI
 
       <button
         type="submit"
-        className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-200 ease-in-out flex items-center justify-center disabled:opacity-50"
+        className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-200 ease-in-out flex items-center justify-center disabled:opacity-50 cursor-pointer"
         disabled={loading}
       >
         <Send className="w-5 h-5" />

@@ -28,7 +28,7 @@ export const getUserById = async (
     return {
       success: false,
       message: error.message || "Failed to fetch user",
-      data: undefined, // Trả về null nếu có lỗi
+      data: {} as Profile, // Trả về null nếu có lỗi
     };
   }
 };
@@ -105,7 +105,7 @@ export const AcceptFriendRequest = async (
     return {
       success: false,
       message: error.message || "Failed to add friend request",
-      data: undefined, // Trả về null nếu có lỗi
+      data: {} as User, // Trả về null nếu có lỗi
     };
   }
 };
@@ -126,7 +126,26 @@ export const DeclineFriendRequest = async (
     return {
       success: false,
       message: error.message || "Failed to add friend request",
-      data: undefined, // Trả về null nếu có lỗi
+      data: {} as User, // Trả về null nếu có lỗi
+    };
+  }
+};
+
+export const DeleteFriend = async (
+  userId: string
+): Promise<ApiResponse<User>> => {
+  try {
+    const response = await api.delete(`/users/friend/${userId}`);
+    return {
+      success: true,
+      message: response.data.message,
+      data: response.data.data || undefined, // Không có dữ liệu trả về
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Failed to add friend request",
+      data: {} as User, // Trả về null nếu có lỗi
     };
   }
 };
