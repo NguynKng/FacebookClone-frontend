@@ -12,7 +12,7 @@ function CreateStatus({ onPostCreated }: { onPostCreated: (post: Post) => void }
     <>
       <div className="px-4 bg-white dark:bg-[rgb(35,35,35)] rounded-lg">
         <div className="flex items-center gap-2 py-4 border-b-[1px] border-gray-200 dark:border-gray-500">
-          <Link to={`/profile/${user?._id}`} className="rounded-full size-10">
+          <Link to={`/profile/${user?._id}`} className="rounded-full size-12">
             <img
               src={
                 user?.avatar
@@ -27,7 +27,7 @@ function CreateStatus({ onPostCreated }: { onPostCreated: (post: Post) => void }
             className="py-2 px-4 rounded-full bg-gray-100 dark:bg-[rgb(52,52,53)] w-full dark:hover:bg-[rgb(56,56,56)] hover:bg-gray-200 cursor-pointer"
             onClick={() => setIsModalOpen(true)}
           >
-            <span className="text-gray-500 dark:text-gray-400">{`What's on your mind, ${user?.firstName}?`}</span>
+            <span className="text-gray-500 dark:text-gray-400 text-lg">{`What's on your mind, ${user?.firstName}?`}</span>
           </div>
         </div>
         <div className="flex items-center py-2">

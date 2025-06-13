@@ -2,7 +2,7 @@ import { Ellipsis, Expand, Search, SquarePen } from "lucide-react";
 import { Friend } from "../types/Friend";
 import { useGetRecentChats } from "../hooks/useMessage";
 import Config from "../envVars";
-import { formatTime } from "../utils/timeUtils";
+import { formatTimeToDateOrHour } from "../utils/timeUtils";
 import SpinnerLoading from "./SpinnerLoading";
 import useAuthStore from "../store/authStore";
 
@@ -84,7 +84,7 @@ function DropdownChat({
                 </p>
               </div>
               <span className="text-xs text-gray-400">
-                {formatTime(message.lastMessage.timestamp)}
+                {formatTimeToDateOrHour(message.lastMessage.timestamp)}
               </span>
             </div>
           ))

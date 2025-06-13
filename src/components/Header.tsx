@@ -140,7 +140,7 @@ function Header({ onToggleChat }: { onToggleChat: (friend: Friend) => void }) {
                         </div>
                     </div>
                     <div className="relative dark:bg-[rgb(70,70,71)] bg-gray-200 dark:hover:bg-gray-600 hover:bg-gray-300 rounded-full size-10 p-2.5 flex items-center justify-center cursor-pointer group" onClick={() => toggleDropdown("notification")}>
-                        <Bell className="fill-black dark:fill-white" />
+                        <Bell className="fill-black dark:text-white dark: dark:fill-white" />
                         <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white text-xs px-3 py-2 rounded-xl shadow-lg whitespace-nowrap group-hover:block hidden transition-opacity duration-500 delay-300 z-50">
                             Notifications
                         </div>

@@ -154,7 +154,7 @@ function PostCard({ post, onDeletePost, showComment }: { post: Post, onDeletePos
             <div className="flex items-center gap-1 text-gray-500 text-sm">
               <span className="text-gray-500 dark:text-gray-400">{formatTime(createdAt)}</span>
               <span className="text-gray-400">•</span>
-              <img src={theme === "ligt" ? "/globe.png" : "/globe-white.png"} className="size-4 object-cover" />
+              <img src={theme === "light" ? "/globe.png" : "/globe-white.png"} className="size-4 object-cover" />
             </div>
           </div>
         </div>
@@ -190,6 +190,7 @@ function PostCard({ post, onDeletePost, showComment }: { post: Post, onDeletePos
                 flex:
                   images.length === 1 ? "1 1 100%" : "1 1 calc(50% - 0.5rem)",
                 minHeight: "240px",
+                maxHeight: "30rem",
               }}
             >
               <img

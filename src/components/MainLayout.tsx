@@ -3,13 +3,12 @@ import Header from "./Header";
 import ChatBox from "./ChatBox";
 import { Friend } from "../types/Friend";
 import useNotificationStore from "../store/notificationStore";
-import useAuthStore from "../store/authStore";
-import { Notification } from "../types/Notification";
 import NotificationPopup from "./NotificationPopup";
+import useAuthStore from "../store/authStore";
 
 function MainLayout({ Element }: { Element: ElementType }) {
   const { addNotification } = useNotificationStore();
-  const { sse } = useAuthStore();
+  const { socket } = useAuthStore();
   const [showChat, setShowChat] = useState(false); // giữ nguyên qua các route
   const [activeChatUser, setActiveChatUser] = useState<Friend>();
 
@@ -31,7 +30,9 @@ function MainLayout({ Element }: { Element: ElementType }) {
   );
 
   const handleGetNotificationsAndPopup = useCallback(
-    (notification: Notification) => {
+    (notification1: any) => {
+      const { notification } = notification1;
+      console.log("Received notification:", notification);
       addNotification(notification);
       setPopup({
         isPopup: true,
@@ -79,21 +80,16 @@ function MainLayout({ Element }: { Element: ElementType }) {
   };
 
   useEffect(() => {
-    if (sse) {
-      sse.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type) {
-          if (data.type === "new_message") {
-            console.log("[SSE NEW MESSAGE]", data);
-            handleGetNewMessage(data.sender);
-          } else {
-            console.log("[SSE NEW NOTIFICATION]", data);
-            handleGetNotificationsAndPopup(data.notification);
-          }
-        }
-      };
-    }
-  }, [sse, handleGetNotificationsAndPopup, handleGetNewMessage]);
+    if (!socket) return;
+
+    socket.on("getNewMessage", handleGetNewMessage);
+    socket.on("new_notification", handleGetNotificationsAndPopup);
+
+    return () => {
+      socket.off("getNewMessage", handleGetNewMessage);
+      socket.off("new_notification", handleGetNotificationsAndPopup);
+    };
+  }, [socket, handleGetNewMessage, handleGetNotificationsAndPopup]);
 
   return (
     <>

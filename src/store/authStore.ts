@@ -31,8 +31,6 @@ interface AuthState {
   onlineUsers: string[];
   theme: string;
   sse: EventSource | null;
-  connectSSE: () => void;
-  disconnectSSE: () => void;
 
   register: (userData: RegisterData) => Promise<boolean>;
   login: (email: string, password: string) => Promise<void>;
@@ -67,32 +65,6 @@ const useAuthStore = create<AuthState>()(
       onlineUsers: [],
       theme: "light",
       sse: null,
-      connectSSE: () => {
-        const userId = get().user?._id;
-        if (!userId) return;
-        const sse = new EventSource(`${Config.BACKEND_URL}/events/${userId}`, {
-          withCredentials: true,
-        });
-
-        sse.onopen = () => {
-          console.log(`[SSE OPENED for ${userId}]`);
-        };
-
-        sse.onerror = (err) => {
-          console.error("[SSE ERROR]", err);
-          sse.close(); // auto-reconnect logic có thể thêm sau
-        };
-
-        set({ sse });
-      },
-      disconnectSSE: () => {
-        const sse = get().sse;
-        if (sse) {
-          sse.close();
-          set({ sse: null });
-          console.log("[SSE DISCONNECTED]");
-        }
-      },
       toggleTheme: () => {
         const currentTheme = get().theme;
         const newTheme = currentTheme === "light" ? "dark" : "light";
@@ -145,7 +117,6 @@ const useAuthStore = create<AuthState>()(
             });
 
             get().connectSocket();
-            get().connectSSE();
             toast.success(
               `Email verified successfully! Welcome aboard, ${user.firstName} ${user.surname}!`
             );
@@ -210,7 +181,6 @@ const useAuthStore = create<AuthState>()(
           });
 
           get().connectSocket();
-          get().connectSSE();
           toast.success(`Welcome back, ${user.firstName} ${user.surname}!`);
         } catch (err: any) {
           console.log(err);
@@ -244,9 +214,6 @@ const useAuthStore = create<AuthState>()(
           if (!get().socket) {
             get().connectSocket();
           }
-          if (!get().sse) {
-            get().connectSSE();
-          }
         } catch (err) {
           const errorMessage = "Session expired. Please login again.";
           set({
@@ -262,8 +229,6 @@ const useAuthStore = create<AuthState>()(
 
       logout: () => {
         get().disconnectSocket();
-        get().disconnectSSE();
-
         set({
           token: null,
           user: null,

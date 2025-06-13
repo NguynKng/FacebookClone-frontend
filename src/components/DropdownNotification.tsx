@@ -7,13 +7,14 @@ import { formatTime } from "../utils/timeUtils";
 import SpinnerLoading from "./SpinnerLoading";
 import useNotificationStore from "../store/notificationStore";
 import useAuthStore from "../store/authStore";
+import { Notification } from "../types/Notification";
 
 function DropdownNotification() {
   const { sse } = useAuthStore();
   const { loading, notifications } = useGetNotifications();
   const { markAsAllRead } = useNotificationStore();
 
-  const getLink = (noti: any) => {
+  const getLink = (noti: Notification) => {
     const enumPostType = ["new_post", "comment_post", "react_post"];
     const enumFriendType = ["friend_request", "accepted_request"];
     if (enumPostType.includes(noti.type) && noti.post) {

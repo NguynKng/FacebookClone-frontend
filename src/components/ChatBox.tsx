@@ -5,7 +5,10 @@ import { Friend } from "../types/Friend";
 import Config from "../envVars";
 import useAuthStore from "../store/authStore";
 import { Message } from "../types/Message";
-import { formatTimeToHourMinute } from "../utils/timeUtils";
+import {
+  formatTimeToHourMinute,
+  formatTimeToDateAndHour,
+} from "../utils/timeUtils";
 import { newMessagePayload } from "../types/Message";
 import { useGetRecentChats } from "../hooks/useMessage";
 
@@ -22,7 +25,7 @@ function ChatBox({
   const { user: currentUser, socket, onlineUsers } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isOnline, setIsOnline] = useState(false);
-  const {updateMessage} = useGetRecentChats();
+  const { updateMessage } = useGetRecentChats();
 
   useEffect(() => {
     if (!socket || !currentUser || !userChat) return;
@@ -30,8 +33,8 @@ function ChatBox({
 
     // 🚀 Emit load lịch sử khi mở ChatBox
     socket.emit("loadChatHistory", {
-        userId1: currentUser._id,
-        userId2: userChat._id,
+      userId1: currentUser._id,
+      userId2: userChat._id,
     });
 
     const handleLoadHistory = (history: Message[]) => {
@@ -47,23 +50,27 @@ function ChatBox({
     const handleReceiveMessage = (message: Message) => {
       const { senderId, receiverId } = message;
       const isRelevant =
-        (String(senderId) === String(currentUser._id) && String(receiverId) === String(userChat._id)) ||
-        (String(senderId) === String(userChat._id) && String(receiverId) === String(currentUser._id));
+        (String(senderId) === String(currentUser._id) &&
+          String(receiverId) === String(userChat._id)) ||
+        (String(senderId) === String(userChat._id) &&
+          String(receiverId) === String(currentUser._id));
 
       if (isRelevant) {
-        setMessages((prev) => [...prev, {
-          ...message,
-          timestamp: new Date(message.timestamp),
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            ...message,
+            timestamp: new Date(message.timestamp),
+          },
+        ]);
       }
       console.log("[RECEIVE MESSAGE]", message);
     };
 
-    const handleNewMessage = (newMessage: newMessagePayload
-    ) => {
-        // ChatBox hiện tại thì chưa cần xử lý gì, có thể để console log cho dễ debug
-        console.log('[NEW MESSAGE NOTIFY]', newMessage);
-        updateMessage(newMessage, newMessage.senderId == currentUser._id ); // Cập nhật lại danh sách tin nhắn
+    const handleNewMessage = (newMessage: newMessagePayload) => {
+      // ChatBox hiện tại thì chưa cần xử lý gì, có thể để console log cho dễ debug
+      console.log("[NEW MESSAGE NOTIFY]", newMessage);
+      updateMessage(newMessage, newMessage.senderId == currentUser._id); // Cập nhật lại danh sách tin nhắn
     };
 
     socket.on("loadChatHistory", handleLoadHistory);
@@ -73,7 +80,7 @@ function ChatBox({
     return () => {
       socket.off("loadChatHistory", handleLoadHistory);
       socket.off("receiveMessage", handleReceiveMessage);
-        socket.off("newMessage", handleNewMessage);
+      socket.off("newMessage", handleNewMessage);
     };
   }, [socket, currentUser, userChat, onlineUsers, updateMessage]);
 
@@ -85,7 +92,7 @@ function ChatBox({
     if (!message.trim() || !currentUser || !socket) return;
 
     const data: Message = {
-        _id: "", // ID sẽ được gán từ server
+      _id: "", // ID sẽ được gán từ server
       senderId: currentUser._id,
       receiverId: userChat._id,
       text: message.trim(),
@@ -100,91 +107,142 @@ function ChatBox({
     setIsMinimized((prev) => !prev);
   };
   return (
-    <div className="fixed right-10 bottom-0 w-88 z-50">
-      <div className="rounded-t-xl shadow-xl overflow-hidden bg-white border-transparent">
-        <div className="px-4 py-2 font-semibold flex justify-between items-center bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-          <div className="flex items-center gap-2">
-            <Link to={`/profile/${userChat._id}`} className="relative rounded-full size-10">
+    <div className="fixed right-4 bottom-0 w-96 z-50 shadow-2xl">
+      <div className="rounded-t-xl overflow-hidden bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700">
+        {/* Header */}
+        <div className="px-4 py-2 font-medium flex justify-between items-center bg-gradient-to-r from-indigo-500 to-blue-600 text-white">
+          <div className="flex items-center gap-3">
+            <Link to={`/profile/${userChat._id}`} className="relative">
               <img
-                src={userChat.avatar ? `${Config.BACKEND_URL}${userChat.avatar}` : "/user.png"}
-                className="object-cover size-full rounded-full"
+                src={
+                  userChat.avatar
+                    ? `${Config.BACKEND_URL}${userChat.avatar}`
+                    : "/user.png"
+                }
+                className="w-10 h-10 rounded-full object-cover border-2 border-white"
               />
               {isOnline && (
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
               )}
             </Link>
-            <div>
-                <Link to={`/profile/${userChat._id}`} className="text-base">
+            <div className="leading-tight">
+              <Link
+                to={`/profile/${userChat._id}`}
+                className="text-base font-semibold hover:underline"
+              >
                 {`${userChat.firstName} ${userChat.surname}`}
-                </Link>
-                {isOnline && (
-                    <span className="text-green-500 block text-[13px]">Active now</span>
-                )}
+              </Link>
+              {isOnline && (
+                <p className="text-green-200 text-sm">Đang hoạt động</p>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
-              className="p-1 rounded-full hover:bg-white/20 transition cursor-pointer"
               onClick={handleMinimize}
+              className="hover:bg-white/20 p-1 rounded-full transition cursor-pointer"
             >
-              <Minus />
+              <Minus size={18} />
             </button>
             <button
-              className="p-1 rounded-full hover:bg-white/20 transition cursor-pointer"
               onClick={onClose}
+              className="hover:bg-white/20 p-1 rounded-full transition cursor-pointer"
             >
-              <X />
+              <X size={18} />
             </button>
           </div>
         </div>
 
+        {/* Body */}
         <div
-          className={`transition-all duration-300 dark:bg-[rgb(36,36,36)] ${
-            isMinimized ? "max-h-0" : "max-h-[28rem]"
+          className={`transition-all duration-300 ${
+            isMinimized ? "max-h-0" : "max-h-[30rem]"
           }`}
         >
-          <div className="flex flex-col gap-3 p-2 h-96 overflow-y-auto">
-            {messages.map((msg) => {
-                const isMyMessage: boolean = msg.senderId === currentUser?._id;
-                return (
-                <div key={msg._id} className={`flex gap-2 max-w-[75%] ${isMyMessage ? "self-end flex-row-reverse" : "self-start"}`}>
-                    {!isMyMessage && (
-                        <img src={userChat.avatar ? `${Config.BACKEND_URL}${userChat.avatar}` : "/user.png"} 
-                        alt={`${userChat.firstName} ${userChat.surname}`}
-                        className="w-8 h-8 rounded-full object-cover self-end"
-                    />
-                    )}
-                    <div className="flex flex-col gap-1">
-                        <span className={`text-gray-500 text-xs ${isMyMessage ? "self-end" : "self-start"}`}>
-                            {formatTimeToHourMinute(msg.timestamp)}
-                        </span>
-                        <p className={`p-2 rounded-lg text-sm ${isMyMessage ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-[rgb(52,52,52)] dark:text-white"}`}>
-                            {msg.text}
-                        </p>
+          <div className="flex flex-col gap-3 px-3 py-2 h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-400">
+            {messages.map((msg, index) => {
+              const isMyMessage = msg.senderId === currentUser?._id;
+              const currentDate = msg.timestamp.toDateString();
+              const prevDate =
+                index > 0 ? messages[index - 1].timestamp.toDateString() : null;
+              const shouldShowDate = currentDate !== prevDate;
+
+              return (
+                <div key={msg._id + index}>
+                  {shouldShowDate && (
+                    <div className="text-center text-xs text-gray-500 mb-2 mt-1">
+                      {formatTimeToDateAndHour(msg.timestamp)}
                     </div>
+                  )}
+                  <div
+                    className={`flex gap-2 ${
+                      isMyMessage ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    {!isMyMessage && (
+                      <img
+                        src={
+                          userChat.avatar
+                            ? `${Config.BACKEND_URL}${userChat.avatar}`
+                            : "/user.png"
+                        }
+                        className="w-8 h-8 rounded-full object-cover self-start"
+                      />
+                    )}
+                    <div
+                      className={`flex flex-col max-w-[75%] ${
+                        isMyMessage
+                          ? "self-end items-end"
+                          : "self-start items-start"
+                      }`}
+                    >
+                      <div
+                        className={`px-4 py-2 rounded-2xl text-sm break-words ${
+                          isMyMessage
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 dark:bg-[rgb(52,52,52)] dark:text-white"
+                        }`}
+                        style={{
+                          wordBreak: "break-word",
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "break-word",
+                        }}
+                      >
+                        {msg.text}
+                      </div>
+                      <span
+                        className={`text-xs mt-1 text-gray-400 ${
+                          isMyMessage ? "pr-1" : "pl-1"
+                        }`}
+                      >
+                        {formatTimeToHourMinute(msg.timestamp)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                );
+              );
             })}
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Input */}
           <form
-            className="p-2 flex items-center gap-2 border-t border-gray-200"
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
+            className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
           >
             <input
               type="text"
-              placeholder="Enter message..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-full text-sm outline-none focus:ring-2 focus:ring-blue-300 dark:placeholder:text-white dark:text-white"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              placeholder="Nhập tin nhắn..."
+              className="flex-1 px-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-white"
             />
             <button
               type="submit"
-              className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 cursor-pointer"
+              className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition"
             >
               <Send className="size-4" />
             </button>
